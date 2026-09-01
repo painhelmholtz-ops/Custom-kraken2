@@ -2,7 +2,7 @@
 
 ---
 
-## What is this guide for? 
+## What is this guide for?
 
 We have built a pipeline to detect human viruses (like VZV, CMV, HSV)
 in RNA-seq data from human dorsal root ganglion (DRG) neurons.
@@ -67,7 +67,7 @@ conda --version
 # Should show: conda 23.x.x  (any version is fine)
 ```
 
-### 1c. Create environment and install Kraken2
+### 1c. Create a clean environment and install Kraken2
 
 ```bash
 # Create environment
@@ -117,58 +117,47 @@ ls ~/human_virus_db/taxonomy/
 #   nodes.dmp
 #   nucl_gb.accession2taxid  (this one is large, ~14 GB)
 ```
-
-> **Slow internet or quota issues?**
-> The `nucl_gb.accession2taxid` file is large (~14 GB uncompressed).
-> If this fails, contact us and we can share the taxonomy files directly.
-
 ---
 
-## STEP 3 — Add the 17 virus sequences to the database
+## STEP 3 — Download and add the 17 virus sequences to the database
 
-We will provide you with **17 individual FASTA files** — one file per virus.
-Each file already has the correct taxon ID embedded in the header
-(in `kraken:taxid|TAXID` format) so Kraken2 assigns it correctly.
+All 17 virus reference FASTA files are already in this GitHub repository
+in the `database/fasta/` folder. You just need to clone the repository
+and add them to the database.
 
-### Files we will send you
-
-```
-database/fasta/
-├── NC_001348.1.fasta   ← VZV
-├── NC_006273.2.fasta   ← CMV
-├── NC_001806.2.fasta   ← HSV-1
-├── NC_001798.2.fasta   ← HSV-2
-├── NC_001664.4.fasta   ← HHV-6A
-├── NC_009334.1.fasta   ← EBV
-├── NC_001405.1.fasta   ← Adenovirus C
-├── NC_001802.1.fasta   ← HIV-1
-├── NC_002204.1.fasta   ← Influenza B
-├── NC_007366.1.fasta   ← Flu A H3N2
-├── NC_026431.1.fasta   ← Flu A H1N1
-├── NC_045512.2.fasta   ← SARS-CoV-2
-├── NC_002058.3.fasta   ← Poliovirus
-├── NC_001498.1.fasta   ← Measles
-├── NC_002200.1.fasta   ← Mumps
-├── NC_001542.1.fasta   ← Rabies
-└── NC_001612.1.fasta   ← Enterovirus A
-```
-
-### First check all 17 files are there
+### 3a. Clone this repository
 
 ```bash
-# Count how many FASTA files are in the folder
+# Clone the repository to your computer/server
+git clone https://github.com/painhelmholtz-ops/Custom-kraken2.git
+
+# Go into the repository folder
+cd Custom-kraken2
+
+# Check all 17 FASTA files are there
 ls database/fasta/*.fasta | wc -l
 # Should show: 17
-
-# Check each file has a kraken:taxid header
-grep "^>" database/fasta/*.fasta
-# Every line should contain kraken:taxid|NUMBER
 ```
 
-### Add each virus file to the database one by one
+### 3b. Check the files look correct
 
 ```bash
-# Add all 17 files — run this block as-is
+# See all virus names and their taxon IDs
+grep "^>" database/fasta/*.fasta
+
+# You should see 17 lines like this:
+# database/fasta/NC_001348.1.fasta:>NC_001348.1|kraken:taxid|10335 VZV_Human_alphaherpesvirus_3
+# database/fasta/NC_001405.1.fasta:>NC_001405.1|kraken:taxid|129951 Human_mastadenovirus_C
+# ... and 15 more
+```
+
+### 3c. Add all 17 files to the database
+
+```bash
+# Make sure you are inside the Custom-kraken2 folder
+cd Custom-kraken2
+
+# Add all 17 virus files to the database — run this block as-is
 for fasta_file in database/fasta/*.fasta; do
     echo "Adding: $fasta_file"
     kraken2-build \
@@ -184,13 +173,16 @@ You should see 17 lines like:
 ```
 Adding: database/fasta/NC_001348.1.fasta
 Adding: database/fasta/NC_001405.1.fasta
+Adding: database/fasta/NC_001498.1.fasta
 ... etc
+Adding: database/fasta/NC_045512.2.fasta
+All 17 viruses added!
 ```
 
 > **Why individual files instead of one combined file?**
 > Adding them one by one ensures each virus sequence is correctly
-> linked to its taxon ID. This is the same method we used to build
-> our validated database.
+> linked to its taxon ID (`kraken:taxid` in the header).
+> This is exactly the same method we used to build our validated database.
 
 ---
 
@@ -238,7 +230,7 @@ is ready to use!
 
 ## STEP 5 — TEST: Download and run one sample (SRR25745120)
 
-Before running on your data, please test the pipeline on our sample
+Before running on your own data, please test the pipeline on our sample
 **SRR25745120** so we can verify your results match ours.
 
 ### 5a. Download the test sample
@@ -283,25 +275,49 @@ This will take few minutes.
 
 ## STEP 6 — Check your test result matches ours
 
-After the run, check the key virus read counts:
+After the run, compare your results with our reference result file
+which is already in this repository at:
+```
+results/SRR25745120/SRR25745120_report.txt
+```
+
+### 6a. Quick check — key virus read counts
 
 ```bash
-echo "=== Checking virus reads in SRR25745120 ==="
+echo "=== YOUR results for SRR25745120 ==="
 echo ""
-echo "VZV (should be ~99 reads):"
-grep -w "10335" ~/test_results/SRR25745120_report.txt | awk '{print "  VZV reads: "$2}'
+echo "VZV (taxid 10335) — expected ~99 reads:"
+grep -w "10335" ~/test_results/SRR25745120_report.txt | awk '{print "  Your result: "$2" reads"}'
 
 echo ""
-echo "CMV (should be ~108 reads):"
-grep -w "10359" ~/test_results/SRR25745120_report.txt | awk '{print "  CMV reads: "$2}'
+echo "CMV (taxid 10359) — expected ~108 reads:"
+grep -w "10359" ~/test_results/SRR25745120_report.txt | awk '{print "  Your result: "$2" reads"}'
 
 echo ""
-echo "HSV-1 (should be ~172 reads):"
-grep -w "10298" ~/test_results/SRR25745120_report.txt | awk '{print "  HSV-1 reads: "$2}'
+echo "HSV-1 (taxid 10298) — expected ~172 reads:"
+grep -w "10298" ~/test_results/SRR25745120_report.txt | awk '{print "  Your result: "$2" reads"}'
 
 echo ""
-echo "HHV-6A (should be ~390 reads):"
-grep -w "32603" ~/test_results/SRR25745120_report.txt | awk '{print "  HHV-6A reads: "$2}'
+echo "HHV-6A (taxid 32603) — expected ~390 reads:"
+grep -w "32603" ~/test_results/SRR25745120_report.txt | awk '{print "  Your result: "$2" reads"}'
+```
+
+### 6b. Compare with our reference report file
+
+```bash
+# Our reference report is in the repository
+# Compare your result with ours line by line
+
+echo "=== OUR reference results (from repository) ==="
+grep -w "10335\|10359\|10298\|10310\|32603\|12509\|129951\|11676\|2697049" \
+    results/SRR25745120/SRR25745120_report.txt | \
+    awk '{printf "  %-40s reads: %s\n", $NF, $2}'
+
+echo ""
+echo "=== YOUR results ==="
+grep -w "10335\|10359\|10298\|10310\|32603\|12509\|129951\|11676\|2697049" \
+    ~/test_results/SRR25745120_report.txt | \
+    awk '{printf "  %-40s reads: %s\n", $NF, $2}'
 ```
 
 ### Expected results for SRR25745120
@@ -315,11 +331,16 @@ grep -w "32603" ~/test_results/SRR25745120_report.txt | awk '{print "  HHV-6A re
 | HHV-6A | 32603 | ~390 reads |
 | EBV | 12509 | 0 reads |
 | Adenovirus C | 129951 | ~27 reads |
+| HIV-1 | 11676 | 0 reads |
+| SARS-CoV-2 | 2697049 | ~4,432 reads* |
 
-If your numbers are close to these — the pipeline is working correctly!
+> *SARS-CoV-2 reads are false positives from human genome k-mer overlap.
+> This is expected and does not affect herpesvirus results.
+
+If your numbers are close to these — the pipeline is working correctly.
 
 > **Results look very different?**
-> Please send us your report file and we will help troubleshoot.
+> Please send us your `_report.txt` file and we will help troubleshoot.
 
 ---
 
@@ -400,12 +421,11 @@ bash run_my_samples.sh
 
 ```
 SAMPLENAME_report.txt    ← small file (~5 KB) — REQUIRED
-SAMPLENAME_output.txt    ← large file (~1 GB) — Machine readable file 
+SAMPLENAME_output.txt    ← large file (~1 GB) — Machine readable 
 ```
 
 > The `_report.txt` file is the most important one.
 > It is small (a few KB) and contains the summary of all classified reads.
-> The `_output.txt` file has read-by-read details
 
 ### Where the files are
 
@@ -473,6 +493,9 @@ gzip SRR25745120_*.fastq
 # Or request more memory from your HPC scheduler
 ```
 
+### Not sure if your results are correct?
+Send us your `_report.txt` file and we will check it for you.
+
 ---
 
 ## QUICK REFERENCE
@@ -507,27 +530,34 @@ conda create -n kraken_viral python=3.10 -y
 conda activate kraken_viral
 conda install -c bioconda kraken2 -y
 
-# Step 2: Taxonomy
+# Step 2: Clone repository (gets all 17 FASTA files automatically)
+git clone https://github.com/painhelmholtz-ops/Custom-kraken2.git
+cd Custom-kraken2
+
+# Step 3: Download taxonomy
 mkdir -p ~/human_virus_db
 kraken2-build --download-taxonomy --use-ftp --db ~/human_virus_db
 
-# Step 3: Add all 17 virus files one by one
+# Step 4: Add all 17 virus files (already in database/fasta/ folder)
 for fasta_file in database/fasta/*.fasta; do
+    echo "Adding: $fasta_file"
     kraken2-build \
         --add-to-library $fasta_file \
         --db ~/human_virus_db --no-masking
 done
 
-# Step 4: Build
+# Step 5: Build database
 kraken2-build --build --db ~/human_virus_db \
     --kmer-len 35 --minimizer-len 31 --threads 8
 
-# Step 5: Test run
+# Step 6: Download test sample
 mkdir -p ~/test_sample ~/test_results
-cd ~/test_sample
-wget -c https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR257/020/SRR25745120/SRR25745120_1.fastq.gz
-wget -c https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR257/020/SRR25745120/SRR25745120_2.fastq.gz
+wget -c -P ~/test_sample \
+    https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR257/020/SRR25745120/SRR25745120_1.fastq.gz
+wget -c -P ~/test_sample \
+    https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR257/020/SRR25745120/SRR25745120_2.fastq.gz
 
+# Step 7: Run test sample
 kraken2 --db ~/human_virus_db \
     --paired --gzip-compressed --threads 8 \
     --report ~/test_results/SRR25745120_report.txt \
@@ -535,18 +565,26 @@ kraken2 --db ~/human_virus_db \
     ~/test_sample/SRR25745120_1.fastq.gz \
     ~/test_sample/SRR25745120_2.fastq.gz
 
-# Step 6: Verify
-grep -w "10335" ~/test_results/SRR25745120_report.txt
-# Should show ~99 VZV reads
+# Step 8: Compare your result with our reference
+echo "=== YOUR result ==="
+grep -w "10335\|10359\|10298\|32603" \
+    ~/test_results/SRR25745120_report.txt | \
+    awk '{print $NF": "$2" reads"}'
 
-# Step 7: Run your samples
+echo ""
+echo "=== OUR reference result (from repository) ==="
+grep -w "10335\|10359\|10298\|32603" \
+    results/SRR25745120/SRR25745120_report.txt | \
+    awk '{print $NF": "$2" reads"}'
+
+# Step 9: Run your own samples
 kraken2 --db ~/human_virus_db \
     --paired --gzip-compressed --threads 8 \
     --report ~/test_results/YOUR_SAMPLE_report.txt \
     --output ~/test_results/YOUR_SAMPLE_output.txt \
     YOUR_SAMPLE_1.fastq.gz YOUR_SAMPLE_2.fastq.gz
 
-# Step 8: Send us the _report.txt files!
+# Step 10: Send us the _report.txt files!
 ls ~/test_results/*_report.txt
 ```
 
