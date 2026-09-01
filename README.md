@@ -2,7 +2,7 @@
 
 ---
 
-## What is this guide for?
+## What is this guide for? 
 
 We have built a pipeline to detect human viruses (like VZV, CMV, HSV)
 in RNA-seq data from human dorsal root ganglion (DRG) neurons.
