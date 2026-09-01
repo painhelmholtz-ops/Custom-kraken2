@@ -1,4 +1,3 @@
-# Step-by-Step Guide: Detecting Human Viruses in RNA-seq Data
 ## Using Kraken2 with a Custom Human Virus Database
 
 ---
@@ -13,19 +12,6 @@ in RNA-seq data from human dorsal root ganglion (DRG) neurons.
 2. Build our custom virus database
 3. Test the pipeline on one sample (SRR25745120) to verify it works
 4. Run the pipeline on your own RNA-seq data
-5. Send us the output files so we can analyse the results together
-
-**You do NOT need to:**
-- Make any plots
-- Interpret the results
-- Run all 13 of our samples
-- Install any special hardware
-
-**You just need to:**
-- Follow the steps below
-- Run on one test sample first
-- Then run on your own samples
-- Send us the output `.txt` files
 
 ---
 
@@ -34,8 +20,6 @@ in RNA-seq data from human dorsal root ganglion (DRG) neurons.
 - A Linux computer or HPC cluster
 - At least 16 GB RAM
 - At least 30 GB free disk space
-- Internet connection
-- Basic ability to type commands in a terminal
 
 ---
 
@@ -49,7 +33,6 @@ STEP 4  →  Build the Kraken2 database
 STEP 5  →  TEST: Run on our sample SRR25745120
 STEP 6  →  Check your test result matches ours
 STEP 7  →  Run on YOUR own samples
-STEP 8  →  Send us the output files
 ```
 
 ---
@@ -84,7 +67,7 @@ conda --version
 # Should show: conda 23.x.x  (any version is fine)
 ```
 
-### 1c. Create a clean environment and install Kraken2
+### 1c. Create environment and install Kraken2
 
 ```bash
 # Create environment
@@ -103,10 +86,6 @@ conda install -c bioconda kraken2 -y
 kraken2 --version
 # Should show: Kraken version 2.1.x
 ```
-
-> **On an HPC cluster?** Kraken2 may already be installed.
-> Try typing `kraken2 --version` first. If it works, skip Step 1c.
-> If not, ask your system administrator or use the conda method above.
 
 ---
 
@@ -259,7 +238,7 @@ is ready to use!
 
 ## STEP 5 — TEST: Download and run one sample (SRR25745120)
 
-Before running on your own data, please test the pipeline on our sample
+Before running on your data, please test the pipeline on our sample
 **SRR25745120** so we can verify your results match ours.
 
 ### 5a. Download the test sample
@@ -298,7 +277,7 @@ kraken2 \
 echo "Test run complete!"
 ```
 
-This takes about 20-30 minutes.
+This will take few minutes.
 
 ---
 
@@ -338,7 +317,6 @@ grep -w "32603" ~/test_results/SRR25745120_report.txt | awk '{print "  HHV-6A re
 | Adenovirus C | 129951 | ~27 reads |
 
 If your numbers are close to these — the pipeline is working correctly!
-Small differences (±10%) are normal.
 
 > **Results look very different?**
 > Please send us your report file and we will help troubleshoot.
@@ -416,23 +394,18 @@ bash run_my_samples.sh
 
 ---
 
-## STEP 8 — Send us the output files
-
-When all your samples are done, please send us:
-
 ### Which files to send
 
 **For EACH sample, send us TWO files:**
 
 ```
 SAMPLENAME_report.txt    ← small file (~5 KB) — REQUIRED
-SAMPLENAME_output.txt    ← large file (~1 GB) — optional but useful
+SAMPLENAME_output.txt    ← large file (~1 GB) — Machine readable file 
 ```
 
 > The `_report.txt` file is the most important one.
 > It is small (a few KB) and contains the summary of all classified reads.
-> The `_output.txt` file has read-by-read details — only send this
-> if we ask for it, as it can be very large.
+> The `_output.txt` file has read-by-read details
 
 ### Where the files are
 
@@ -443,13 +416,6 @@ ls -lh ~/test_results/
 # Check file sizes
 du -sh ~/test_results/*_report.txt
 ```
-
-### How to send
-
-You can send the `_report.txt` files by:
-- Email attachment (they are very small, just a few KB each)
-- File sharing service (Google Drive, Dropbox, WeTransfer)
-- Direct transfer to our server (we can provide sftp details)
 
 ### What to include when you send
 
@@ -506,9 +472,6 @@ gzip SRR25745120_*.fastq
 # Change --threads 8 to --threads 2
 # Or request more memory from your HPC scheduler
 ```
-
-### Not sure if your results are correct?
-Send us your `_report.txt` file and we will check it for you.
 
 ---
 
