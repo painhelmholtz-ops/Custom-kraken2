@@ -515,7 +515,7 @@ du -sh ~/test_results/*_report.txt
 ### What to include when you send
 
 Please also tell us:
-1. The organism/tissue your RNA-seq samples are from
+1. Age and gender of the donor.
 2. Whether samples are paired-end or single-end
 3. Any other relevant information about the samples
 
