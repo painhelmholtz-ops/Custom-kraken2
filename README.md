@@ -33,6 +33,7 @@ STEP 4  →  Build the Kraken2 database
 STEP 5  →  TEST: Run on our sample SRR25745120
 STEP 6  →  Check your test result matches ours
 STEP 7  →  Run on YOUR own samples
+Step 8  → Extraction of matched reads
 ```
 
 ---
@@ -412,9 +413,82 @@ Run it with:
 ```bash
 bash run_my_samples.sh
 ```
-
 ---
 
+## STEP 8 — Extract matched viral reads and send them to us
+
+After running Kraken2, we also need the actual reads that matched
+each virus — not just the report summary. We provide a ready-to-use
+Python script that does this automatically.
+
+### 8a. Download the extraction script
+
+The script is already in this repository at: scripts/extract_viral_reads.py
+---
+
+### 8b. What you need to change in the script
+
+When you run the script you need to change **4 things**:
+
+| What to change | Where | Example |
+|----------------|-------|---------|
+| `--kraken_output` | path to your Kraken2 `_output.txt` file | `~/results/SAMPLE_output.txt` |
+| `--r1` | path to your R1 fastq.gz file | `~/data/SAMPLE_1.fastq.gz` |
+| `--r2` | path to your R2 fastq.gz file (paired-end only) | `~/data/SAMPLE_2.fastq.gz` |
+| `--sample_name` | your sample name | `SAMPLE001` |
+
+> Do NOT change anything else in the script.
+> The virus taxon IDs are fixed and must stay as they are.
+
+### 8c. Run the extraction script
+
+**For paired-end samples:**
+```bash
+python3 scripts/extract_viral_reads.py \
+    --kraken_output ~/test_results/YOUR_SAMPLE_output.txt \
+    --r1 /path/to/YOUR_SAMPLE_1.fastq.gz \
+    --r2 /path/to/YOUR_SAMPLE_2.fastq.gz \
+    --sample_name YOUR_SAMPLE \
+    --out_dir viral_reads_output/
+```
+
+**For single-end samples:**
+```bash
+python3 scripts/extract_viral_reads.py \
+    --kraken_output ~/test_results/YOUR_SAMPLE_output.txt \
+    --r1 /path/to/YOUR_SAMPLE.fastq.gz \
+    --sample_name YOUR_SAMPLE \
+    --out_dir viral_reads_output/
+```
+
+**Test it first on our sample SRR25745120:**
+```bash
+python3 scripts/extract_viral_reads.py \
+    --kraken_output ~/test_results/SRR25745120_output.txt \
+    --r1 ~/test_sample/SRR25745120_1.fastq.gz \
+    --r2 ~/test_sample/SRR25745120_2.fastq.gz \
+    --sample_name SRR25745120 \
+    --out_dir viral_reads_output/
+```
+
+### 8d. Expected output for SRR25745120
+viral_reads_output/SRR25745120/
+ALL_viral_R1.fastq.gz ← 5,232 reads total
+ALL_viral_R2.fastq.gz ← 5,232 reads total
+VZV_reads_R1.fastq.gz ← 99 reads
+CMV_reads_R1.fastq.gz ← 108 reads
+HSV1_reads_R1.fastq.gz ← 172 reads
+HSV2_reads_R1.fastq.gz ← 4 reads
+HHV6A_reads_R1.fastq.gz ← 390 reads
+Adenovirus_C_reads_R1.fastq.gz ← 27 reads
+SARS_CoV2_reads_R1.fastq.gz ← 4,432 reads (false positive — expected)
+extraction_summary.txt ← summary of all reads extracted
+
+If your numbers match — the extraction worked correctly.
+
+### 8e. What to send us
+
+Please send us these files for EACH of your samples:
 ### Which files to send
 
 **For EACH sample, send us TWO files:**
@@ -424,8 +498,9 @@ SAMPLENAME_report.txt    ← small file (~5 KB) — REQUIRED
 SAMPLENAME_output.txt    ← large file (~1 GB) — Machine readable 
 ```
 
-> The `_report.txt` file is the most important one.
-> It is small (a few KB) and contains the summary of all classified reads.
+> The `_output.txt` file from Kraken2 is very large (~1 GB).
+> You do NOT need to send this — only the `_report.txt` and
+> the extracted reads folder.
 
 ### Where the files are
 
